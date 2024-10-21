@@ -1,40 +1,56 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# NewsAPI Client with Clean Architecture (Frontend with TypeScript)
 
-## Getting Started
+## Description
+This project implements a clean architecture frontend using **TypeScript**, fetching data from **NewsAPI**. The API key is stored securely in an `.env` file.
 
-First, run the development server:
+## Features
+- Fetch the latest news from NewsAPI
+- Structured with clean architecture principles focusing on data and domain layers
+- Developed using TypeScript for type safety and maintainability
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Technology Stack
+- **TypeScript**
+- **React** (or your preferred frontend framework)
+- **Tailwind CSS** for styling
+- **NewsAPI** for fetching news data
+- **dotenv** for managing environment variables
+- **axios** for making HTTP requests
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
+- **Node.js** v16+ installed on your system
+- Create an account on [NewsAPI](https://newsapi.org/) and get your API key
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Installation
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/obieprakoso/newsapi-clean-architecture-frontend.git
+    cd newsapi-clean-architecture-frontend
+    ```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+2. Install the dependencies:
+    ```bash
+    npm install
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+3. Create an `.env` file in the root of your project and add your API key:
+    ```env
+    NEXT_PUBLIC_NEWS_API_KEY=your_newsapi_key_here
+    ```
 
-## Learn More
+4. Start the development server:
+    ```bash
+    npm start
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```plaintext
+src/
+│
+├── domain/           # Core business logic
+│   ├── models/       # Domain models (e.g., News)
+│   └── usecases/     # Business use cases (e.g., FetchLatestNews)
+│
+└── data/             # External services and API integrations
+    └── api/          # NewsAPI client for fetching data

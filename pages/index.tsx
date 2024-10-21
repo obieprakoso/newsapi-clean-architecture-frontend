@@ -1,115 +1,259 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+import { useQuery } from "@tanstack/react-query";
+import { getNews } from "../src/domain/usecases/getNews";
+import { Article } from "../src/domain/models/Article";
+import React, { useState, useEffect } from "react";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+const NewsPage: React.FC = () => {
+  const {
+    data: articles,
+    isLoading,
+    error,
+  } = useQuery<Article[], Error>({
+    queryKey: ["news"],
+    queryFn: getNews,
+  });
 
-export default function Home() {
-  return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              pages/index.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [savedArticles, setSavedArticles] = useState<Article[]>([]);
+  const [showSaved, setShowSaved] = useState<boolean>(false); // State to toggle saved articles visibility
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Function to save article to localStorage (as an array)
+  const saveToLocalStorage = (article: Article) => {
+    const savedArticles = JSON.parse(
+      localStorage.getItem("savedArticles") || "[]"
+    );
+    // Avoid duplicate entries by checking if the article already exists
+    const isArticleSaved = savedArticles.some(
+      (saved: Article) => saved.url === article.url
+    );
+    if (!isArticleSaved) {
+      savedArticles.push(article);
+      localStorage.setItem("savedArticles", JSON.stringify(savedArticles));
+      setSavedArticles(savedArticles); // Update saved articles in the state
+    }
+  };
+
+  // Load saved articles from localStorage when the component mounts
+  useEffect(() => {
+    const storedArticles = JSON.parse(
+      localStorage.getItem("savedArticles") || "[]"
+    );
+    setSavedArticles(storedArticles);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex justify-center items-center bg-gray-100">
+        <SkeletonLoader />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div>Error loading news: {error.message}</div>;
+  }
+
+  // Filter articles based on search term
+  const filteredArticles = articles?.filter((article) => {
+    return (
+      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      article.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const renderArticles = (articles: Article[], startIndex: number) => {
+    const isLeftSide = (startIndex / 5) % 2 === 0;
+    const firstArticle = articles[startIndex];
+    const nextArticles = articles.slice(startIndex + 1, startIndex + 5);
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 h-auto gap-4 p-4">
+        {/* Fullscreen for first news */}
+        {firstArticle && (
+          <div
+            className={`bg-gray-200 p-4 md:h-full md:flex flex-col justify-between ${
+              isLeftSide ? "" : "md:order-last"
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <img
+              className="w-full md:h-3/4 object-cover rounded-lg"
+              src={firstArticle.urlToImage || "/placeholder.jpg"}
+              alt={firstArticle.title}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="mt-4">
+              <h3 className="text-lg md:text-2xl font-bold">
+                {firstArticle.title}
+              </h3>
+              <small className="block mt-2 text-gray-500 text-sm">
+                Published on:{" "}
+                {new Date(firstArticle.publishedAt).toLocaleString()}
+              </small>
+              <p className="mt-2 text-sm md:text-base">
+                {firstArticle.description}
+              </p>
+              <a
+                href={firstArticle.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => saveToLocalStorage(firstArticle)} // Save article on click
+                className="text-blue-500 text-sm"
+              >
+                Read more
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Zigzag 2x2 Grid for next 4 articles */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full">
+          {nextArticles.map((article, index) => (
+            <div
+              key={article.url}
+              className={`bg-gray-200 p-4 flex flex-col justify-between ${
+                index % 2 === 0 ? "md:order-first" : "md:order-last"
+              }`} // Zigzag layout
+            >
+              <img
+                className="w-full h-40 object-cover rounded-lg"
+                src={article.urlToImage || "/placeholder.jpg"}
+                alt={article.title}
+              />
+              <div className="mt-2">
+                <h3 className="text-sm font-bold md:text-base">
+                  {article.title}
+                </h3>
+                <small className="block my-2 text-gray-500 text-xs md:text-sm">
+                  Published on: {new Date(article.publishedAt).toLocaleString()}
+                </small>
+                <p className="text-xs mt-1 md:text-sm">{article.description}</p>
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => saveToLocalStorage(article)} // Save article on click
+                  className="text-blue-500 text-xs md:text-sm"
+                >
+                  Read more
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {/* Search Input */}
+      <div className="p-4">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          placeholder="Search news..."
+          className="w-full p-2 border rounded-lg"
+        />
+      </div>
+
+      {/* Button to toggle saved articles */}
+      <div className="p-4">
+        <button
+          onClick={() => setShowSaved(!showSaved)}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {showSaved ? "Hide Saved Articles" : "View Saved Articles"}
+        </button>
+      </div>
+
+      {/* Display saved articles */}
+      {showSaved && (
+        <div className="p-4">
+          <h2 className="text-2xl font-bold">Saved Articles</h2>
+          {savedArticles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {savedArticles.map((article) => (
+                <div
+                  key={article.url}
+                  className="bg-gray-200 p-4 flex flex-col justify-between"
+                >
+                  <img
+                    className="w-full h-40 object-cover rounded-lg"
+                    src={article.urlToImage || "/placeholder.jpg"}
+                    alt={article.title}
+                  />
+                  <div className="mt-2">
+                    <h3 className="text-sm font-bold md:text-base">
+                      {article.title}
+                    </h3>
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 text-xs md:text-sm"
+                    >
+                      Read more
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>No saved articles.</div>
+          )}
+        </div>
+      )}
+
+      <div className="p-4">
+        <h2 className="text-2xl font-bold">Articles</h2>
+      </div>
+      {/* Display filtered articles */}
+      {filteredArticles?.length > 0 ? (
+        filteredArticles.map((_, index) =>
+          index % 5 === 0 ? renderArticles(filteredArticles, index) : null
+        )
+      ) : (
+        <div className="p-4">No articles found.</div>
+      )}
     </div>
   );
-}
+};
+
+const SkeletonLoader: React.FC = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 w-full h-full">
+    {/* Skeleton for the first (fullscreen) article */}
+    <div className="bg-gray-200 p-4 md:h-full flex flex-col justify-between">
+      <div className="bg-gray-300 w-full h-3/4 rounded-lg"></div>
+      <div className="mt-4">
+        <div className="bg-gray-400 h-6 rounded w-3/4"></div>
+        <div className="bg-gray-400 mt-2 h-4 rounded w-1/2"></div>
+        <div className="bg-gray-400 mt-2 h-4 rounded w-3/4"></div>
+      </div>
+    </div>
+
+    {/* Skeleton for the next 4 articles (2x2 grid) */}
+    <div className="grid grid-cols-2 grid-rows-2 gap-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className={`bg-gray-200 p-4 flex flex-col justify-between ${
+            index % 2 === 0 ? "md:order-first" : "md:order-last"
+          }`}
+        >
+          <div className="bg-gray-300 w-full h-40 rounded-lg"></div>
+          <div className="mt-2">
+            <div className="bg-gray-400 h-4 rounded w-3/4"></div>
+            <div className="bg-gray-400 mt-2 h-4 rounded w-1/2"></div>
+            <div className="bg-gray-400 mt-2 h-4 rounded w-3/4"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export default NewsPage;
