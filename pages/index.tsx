@@ -212,9 +212,9 @@ const NewsPage: React.FC = () => {
         <h2 className="text-2xl font-bold">Articles</h2>
       </div>
       {/* Display filtered articles */}
-      {filteredArticles?.length > 0 ? (
-        filteredArticles.map((_, index) =>
-          index % 5 === 0 ? renderArticles(filteredArticles, index) : null
+      {filteredArticles!.length > 0 ? (
+        filteredArticles!.map((_, index) =>
+          index % 5 === 0 ? renderArticles(filteredArticles!, index) : null
         )
       ) : (
         <div className="p-4">No articles found.</div>
