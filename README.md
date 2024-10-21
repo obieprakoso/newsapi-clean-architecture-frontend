@@ -10,7 +10,7 @@ This project implements a clean architecture frontend using **TypeScript**, fetc
 
 ## Technology Stack
 - **TypeScript**
-- **React** (or your preferred frontend framework)
+- **NextJs** (or your preferred frontend framework)
 - **Tailwind CSS** for styling
 - **NewsAPI** for fetching news data
 - **dotenv** for managing environment variables
@@ -40,7 +40,7 @@ This project implements a clean architecture frontend using **TypeScript**, fetc
 
 4. Start the development server:
     ```bash
-    npm start
+    npm run dev
     ```
 
 ## Project Structure
